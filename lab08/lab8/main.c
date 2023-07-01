@@ -32,27 +32,27 @@ void *whatever(void *arg) {
 
     id = *((int *) arg);
 
-    printf("przed bariera 1 - watek %d\n", id);
+    printf("before barrier 1 - thread %d\n", id);
 
-    bariera();
+    barrier();
 
-    printf("przed bariera 2 - watek %d\n", id);
+    printf("before barrier 2 - thread %d\n", id);
 
-    bariera();
+    barrier();
 
-    printf("przed bariera 3 - watek %d\n", id);
+    printf("before barrier 3 - thread %d\n", id);
 
-    bariera();
+    barrier();
 
-    printf("przed bariera 4 - watek %d\n", id);
+    printf("before barrier4 - thread %d\n", id);
 
-    bariera();
+    barrier();
 
-    printf("przed bariera 5 - watek %d\n", id);
+    printf("before barrier 5 - thread %d\n", id);
 
-    bariera();
+    barrier();
 
-    printf("po ostatniej barierze - watek %d\n", id);
+    printf("after the last barrier - thread %d\n", id);
 
     pthread_exit((void *) 0);
 }

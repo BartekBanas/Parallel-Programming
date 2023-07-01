@@ -5,4 +5,4 @@
 
 void barrierInitiation(int);
 
-void bariera(void);
+void barrier(void);

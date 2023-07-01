@@ -4,18 +4,19 @@
 
 static pthread_mutex_t lock;
 static pthread_cond_t bariera_cond;
+
 int amountOfThreads;
 int awaitingThreads;
 
-void barrierInitiation(int l) //zwiazanie mutexu i zmiennej warunku z liczba watkow
+void barrierInitiation(int threads)
 {
-    pthread_mutex_init(&lock, NULL);    //tworzenie mutexu
-    pthread_cond_init(&bariera_cond, NULL); //tworzenie zmiennej warunku
-    amountOfThreads = l;
+    pthread_mutex_init(&lock, NULL);
+    pthread_cond_init(&bariera_cond, NULL);
+    amountOfThreads = threads;
     awaitingThreads = 0;
 }
 
-void bariera() {
+void barrier() {
     pthread_mutex_lock(&lock);
     awaitingThreads++;
 
