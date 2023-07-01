@@ -1,7 +1,6 @@
 #ifndef _czytelnia_
 #define _czytelnia_
 
-/*** Definicje typow zmiennych ***/
 typedef struct {
     int readers;
     int writers;
@@ -13,23 +12,22 @@ typedef struct {
 
     pthread_mutex_t mutex;
 
-    pthread_cond_t condWriter, condReader; // należy także zainicjować
+    pthread_cond_t condWriter, condReader;
 
-} czytelnia_t;
+} Library;
 
-/*** Deklaracje procedur interfejsu ***/
-void inicjuj(czytelnia_t *czytelnia_p);
+void initiate(Library *czytelnia_p);
 
-void czytam(czytelnia_t *czytelnia_p);
+void reading(Library *czytelnia_p);
 
-void pisze(czytelnia_t *czytelnia_p);
+void writing(Library *czytelnia_p);
 
-int my_read_lock_lock(czytelnia_t *czytelnia_p);
+int my_read_lock_lock(Library *czytelnia_p);
 
-int my_read_lock_unlock(czytelnia_t *czytelnia_p);
+int my_read_lock_unlock(Library *czytelnia_p);
 
-int my_write_lock_lock(czytelnia_t *czytelnia_p);
+int my_write_lock_lock(Library *czytelnia_p);
 
-int my_write_lock_unlock(czytelnia_t *czytelnia_p);
+int my_write_lock_unlock(Library *czytelnia_p);
 
 #endif

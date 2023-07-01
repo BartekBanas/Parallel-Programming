@@ -1,12 +1,10 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<unistd.h>
-#include<pthread.h>
-#include"czytelnia.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include "czytelnia.h"
 
-
-
-int my_read_lock_lock(czytelnia_t *czytelnia_p) {
+int my_read_lock_lock(Library *czytelnia_p) {
     pthread_mutex_lock(&czytelnia_p->mutex);
 
     if (czytelnia_p->writers > 0 || czytelnia_p->writersWaiting > 0) {
@@ -20,8 +18,7 @@ int my_read_lock_lock(czytelnia_t *czytelnia_p) {
     pthread_mutex_unlock(&czytelnia_p->mutex);
 }
 
-
-int my_read_lock_unlock(czytelnia_t *czytelnia_p) {
+int my_read_lock_unlock(Library *czytelnia_p) {
     pthread_mutex_lock(&czytelnia_p->mutex);
 
     czytelnia_p->readers--;
@@ -32,8 +29,7 @@ int my_read_lock_unlock(czytelnia_t *czytelnia_p) {
     pthread_mutex_unlock(&czytelnia_p->mutex);
 }
 
-
-int my_write_lock_lock(czytelnia_t *czytelnia_p) {
+int my_write_lock_lock(Library *czytelnia_p) {
     pthread_mutex_lock(&czytelnia_p->mutex);
 
     if (czytelnia_p->writers > 0 || czytelnia_p->writersWaiting > 0) {
@@ -43,13 +39,11 @@ int my_write_lock_lock(czytelnia_t *czytelnia_p) {
 
     }
     czytelnia_p->writers++;
-    //pthread_cond_signal(&czytelnia_p->condWriter);
 
     pthread_mutex_unlock(&czytelnia_p->mutex);
 }
 
-
-int my_write_lock_unlock(czytelnia_t *czytelnia_p) {
+int my_write_lock_unlock(Library *czytelnia_p) {
     pthread_mutex_lock(&czytelnia_p->mutex);
 
     czytelnia_p->writers--;
@@ -64,7 +58,7 @@ int my_write_lock_unlock(czytelnia_t *czytelnia_p) {
     pthread_mutex_unlock(&czytelnia_p->mutex);
 }
 
-void inicjuj(czytelnia_t *czytelnia_p) {
+void initiate(Library *czytelnia_p) {
     czytelnia_p->mutex = PTHREAD_MUTEX_INITIALIZER;
     czytelnia_p->writers = 0;
     czytelnia_p->readers = 0;
@@ -76,7 +70,7 @@ void inicjuj(czytelnia_t *czytelnia_p) {
     czytelnia_p->readersWaiting = 0;
 }
 
-void czytam(czytelnia_t *czytelnia_p) {
+void reading(Library *czytelnia_p) {
     // wypisanie wartości zmiennych kontrolujących działanie: liczby czytelników i pisarzy
     printf("READERS INSIDE: %d\n", czytelnia_p->readers);
     printf("WRITERS INSIDE: %d\n", czytelnia_p->writers);
@@ -84,14 +78,14 @@ void czytam(czytelnia_t *czytelnia_p) {
     // sprawdzenie warunku poprawności i ewentualny exit
     if (czytelnia_p->writers > 1 || (czytelnia_p->writers == 1 && czytelnia_p->readers > 0) ||
         czytelnia_p->writers < 0 || czytelnia_p->readers < 0) {
-        printf("An Error has accured");
+        printf("An Error has occurred");
         exit(0);
     }
 
     usleep(rand() % 300000);
 }
 
-void pisze(czytelnia_t *czytelnia_p) {
+void writing(Library *czytelnia_p) {
     // wypisanie wartości zmiennych kontrolujących działanie: liczby czytelników i pisarzy
     printf("READERS INSIDE: %d\n", czytelnia_p->readers);
     printf("WRITERS INSIDE: %d\n", czytelnia_p->writers);
@@ -99,13 +93,9 @@ void pisze(czytelnia_t *czytelnia_p) {
     // sprawdzenie warunku poprawności i ewentualny exit
     if (czytelnia_p->writers > 1 || (czytelnia_p->writers == 1 && czytelnia_p->readers > 0) ||
         czytelnia_p->writers < 0 || czytelnia_p->readers < 0) {
-        printf("An Error has accured");
+        printf("An Error has occurred");
         exit(0);
     }
 
     usleep(rand() % 300000);
-}
-
-int zasob_pelny(czytelnia_t *czytelnia) {
-
 }
