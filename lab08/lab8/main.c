@@ -1,63 +1,58 @@
-#include<stdlib.h>
 #include<stdio.h>
 #include<pthread.h>
 #include"bariera.h"
 
+#define THREADS_AMOUNT 44
 
-//#define LICZBA_W 4
-#define LICZBA_W 44
+pthread_t threads[THREADS_AMOUNT];
 
-
-pthread_t watki[LICZBA_W];
-
-void *cokolwiek(void *arg);
+void *whatever(void *arg);
 
 int main(int argc, char *argv[]) {
-    int i, indeksy[LICZBA_W];
-    for (i = 0; i < LICZBA_W; i++) indeksy[i] = i;
+    int i, indexes[THREADS_AMOUNT];
+    for (i = 0; i < THREADS_AMOUNT; i++) indexes[i] = i;
 
     // use of pthread_once (once_control, init_routine) ?
     // int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
     // but init_routine has no arguments...
-    bariera_init(LICZBA_W);
+    barrierInitiation(THREADS_AMOUNT);
 
-    for (i = 0; i < LICZBA_W; i++) {
-        pthread_create(&watki[i], NULL, cokolwiek, (void *) &indeksy[i]);
+    for (i = 0; i < THREADS_AMOUNT; i++) {
+        pthread_create(&threads[i], NULL, whatever, (void *) &indexes[i]);
     }
 
-    for (i = 0; i < LICZBA_W; i++) pthread_join(watki[i], NULL);
+    for (i = 0; i < THREADS_AMOUNT; i++) pthread_join(threads[i], NULL);
 
     pthread_exit(NULL);
 }
 
+void *whatever(void *arg) {
 
-void *cokolwiek(void *arg) {
+    int i, id;
 
-    int i, moj_id;
+    id = *((int *) arg);
 
-    moj_id = *((int *) arg);
-
-    printf("przed bariera 1 - watek %d\n", moj_id);
-
-    bariera();
-
-    printf("przed bariera 2 - watek %d\n",moj_id);
+    printf("przed bariera 1 - watek %d\n", id);
 
     bariera();
 
-    printf("przed bariera 3 - watek %d\n",moj_id);
+    printf("przed bariera 2 - watek %d\n", id);
 
     bariera();
 
-    printf("przed bariera 4 - watek %d\n",moj_id);
+    printf("przed bariera 3 - watek %d\n", id);
 
     bariera();
 
-    printf("przed bariera 5 - watek %d\n",moj_id);
+    printf("przed bariera 4 - watek %d\n", id);
 
     bariera();
 
-    printf("po ostatniej barierze - watek %d\n", moj_id);
+    printf("przed bariera 5 - watek %d\n", id);
+
+    bariera();
+
+    printf("po ostatniej barierze - watek %d\n", id);
 
     pthread_exit((void *) 0);
 }
