@@ -1,7 +1,7 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<string.h>
-#include"mpi.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "mpi.h"
 
 typedef struct {
     int integer;
@@ -10,7 +10,7 @@ typedef struct {
 } Data;
 
 int main(int argc, char **argv) {
-    int rank, size, i, source, tag, packet_size;
+    int rank, size, i, packet_size;
     MPI_Status status;
     Data local_data;
     packet_size = sizeof(Data);
@@ -19,7 +19,8 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (size > 1) {
-        if (rank != 0) {
+        if (rank != 0)
+        {
             void *buffer = (void *) malloc(sizeof(Data));
             int position = 0;
             local_data.integer = 10 * rank;
@@ -33,7 +34,9 @@ int main(int argc, char **argv) {
             printf("Process %d sent data to %d: int: %d,\tdouble: %lf,\tminiString: %s\n", rank, 0, local_data.integer,
                    local_data.someNumber, local_data.miniString);
             free(buffer);
-        } else {
+        }
+        else
+        {
             for (i = 0; i < size - 1; i++) {
                 void *buffer = (void *) malloc(sizeof(Data));
                 int position = 0;
@@ -48,6 +51,7 @@ int main(int argc, char **argv) {
             }
         }
     }
+
     MPI_Finalize();
     return 0;
 }
