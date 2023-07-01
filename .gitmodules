@@ -1,3 +1,6 @@
 [submodule "PR_lab7"]
 	path = PR_lab7
 	url = https://github.com/BartekBanas/PR_lab7
+[submodule "lab09/PR_lab9"]
+	path = lab09/PR_lab9
+	url = https://github.com/BartekBanas/PR_lab9
