@@ -4,60 +4,58 @@
 
 #include "mpi.h"
 
-//#define WYMIAR 6400
-//#define ROZMIAR 40960000
+//#define DIMENSION 6400
+//#define SIZE 40960000
 
-//#define WYMIAR 7936
-//#define ROZMIAR 62980096
-//#define WYMIAR 19200
-//#define ROZMIAR 368640000
+//#define DIMENSION 7936
+//#define SIZE 62980096
+//#define DIMENSION 19200
+//#define SIZE 368640000
 
-//#define WYMIAR 40320 // divisible by 128
-//#define WYMIAR 20160 // divisible by 64
-#define WYMIAR 10080 // divisible by 1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,24,28,30,32,36,40,60
-//#define WYMIAR 4800 // max possible for MPI_Alltoall on Estera
-#define ROZMIAR (WYMIAR*WYMIAR)
+//#define DIMENSION 40320 // divisible by 128
+//#define DIMENSION 20160 // divisible by 64
+#define DIMENSION 10080 // divisible by 1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,24,28,30,32,36,40,60
+//#define DIMENSION 4800 // max possible for MPI_Alltoall on Estera
+#define SIZE (DIMENSION*DIMENSION)
 
 void mat_vec(double *a, double *x, double *y, int n, int nt);
 
 int main(int argc, char **argv) {
-    static double x[WYMIAR], y[WYMIAR], z[WYMIAR]; // z is sized for column decomposition
+    static double x[DIMENSION], y[DIMENSION], z[DIMENSION]; // z is sized for column decomposition
     double *a;
     double t1;
     int n, nt, i, j;
 
 
     int rank, size;
-    int n_wier, n_wier_last;
+    int row_num, row_num_last;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    n = WYMIAR;
+    n = DIMENSION;
 
     // x is locally initialized to zero
-    for (i = 0; i < WYMIAR; i++) x[i] = 0.0;
+    for (i = 0; i < DIMENSION; i++) x[i] = 0.0;
 
     if (rank == 0) {
 
-        a = (double *) malloc((ROZMIAR + 1) * sizeof(double));
+        a = (double *) malloc((SIZE + 1) * sizeof(double));
 
-        for (i = 0; i < ROZMIAR; i++) a[i] = 1.0 * i;
-        for (i = 0; i < WYMIAR; i++) x[i] = 1.0 * (WYMIAR - i);
+        for (i = 0; i < SIZE; i++) a[i] = 1.0 * i;
+        for (i = 0; i < DIMENSION; i++) x[i] = 1.0 * (DIMENSION - i);
 
-
-        //printf("Podaj liczbe watkow: "); scanf("%d",&nt);
         nt = 1;
 
-        printf("\n\npoczatek (wykonanie sekwencyjne)\n");
+        printf("\n\nstart (sequential execution)\n");
 
         t1 = MPI_Wtime();
         mat_vec(a, x, y, n, nt);
         t1 = MPI_Wtime() - t1;
 
-        printf("\tczas wykonania (zaburzony przez MPI?): %lf, Gflop/s: %lf, GB/s> %lf\n",
-               t1, 2.0e-9 * ROZMIAR / t1, (1.0 + 1.0 / n) * 8.0e-9 * ROZMIAR / t1);
+        printf("\texecution time (disturbed by MPI?): %lf, Gflop/s: %lf, GB/s> %lf\n",
+               t1, 2.0e-9 * SIZE / t1, (1.0 + 1.0 / n) * 8.0e-9 * SIZE / t1);
 
     }
 
@@ -66,40 +64,40 @@ int main(int argc, char **argv) {
         /************** || block row decomposition || *******************/
 
         // z is initialized for all ranks
-        for (i = 0; i < WYMIAR; i++) z[i] = 0.0;
+        for (i = 0; i < DIMENSION; i++) z[i] = 0.0;
 
         MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        // podzial wierszowy
-        n_wier = ceil(WYMIAR / size);
-        n_wier_last = WYMIAR - n_wier * (size - 1);
+        // row division
+        row_num = ceil(DIMENSION / size);
+        row_num_last = DIMENSION - row_num * (size - 1);
 
-        // for n_wier!=n_wier_last arrays should be oversized to avoid problems
-        if (n_wier != n_wier_last) {
+        // for row_num!=row_num_last arrays should be oversized to avoid problems
+        if (row_num != row_num_last) {
 
-            printf("This version does not work with WYMIAR not a multiple of size!\n");
+            printf("This version does not work with DIMENSION not a multiple of size!\n");
             MPI_Finalize();
             exit(0);
 
         }
 
         // local matrices a_local form parts of a big matrix a
-        double *a_local = (double *) malloc(WYMIAR * n_wier * sizeof(double));
-        for (i = 0; i < WYMIAR * n_wier; i++) a_local[i] = 0.0;
+        double *a_local = (double *) malloc(DIMENSION * row_num * sizeof(double));
+        for (i = 0; i < DIMENSION * row_num; i++) a_local[i] = 0.0;
 
         // ... collective communication instead of the following point-to-point
 
         if (rank == 0) {
 
-            for (i = 0; i < WYMIAR * n_wier; i++) a_local[i] = a[i];
+            for (i = 0; i < DIMENSION * row_num; i++) a_local[i] = a[i];
         }
 
-        MPI_Scatter(a, n_wier * WYMIAR, MPI_DOUBLE, a_local,
-                    n_wier * WYMIAR, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Scatter(a, row_num * DIMENSION, MPI_DOUBLE, a_local,
+                    row_num * DIMENSION, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        double *x_local = malloc(n_wier * sizeof(double));
+        double *x_local = malloc(row_num * sizeof(double));
 
-        MPI_Scatter(x, n_wier, MPI_DOUBLE, x_local,
-                    n_wier, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Scatter(x, row_num, MPI_DOUBLE, x_local,
+                    row_num, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
         // ....
@@ -107,58 +105,57 @@ int main(int argc, char **argv) {
         // point-to-point not optimal communication
 //        if (rank == 0) {
 //
-//            for (i = 0; i < WYMIAR * n_wier; i++) a_local[i] = a[i];
+//            for (i = 0; i < DIMENSION * row_num; i++) a_local[i] = a[i];
 //
 //            for (i = 1; i < size - 1; i++) {
-//                MPI_Send(&a[i * WYMIAR * n_wier], n_wier * WYMIAR, MPI_DOUBLE, i, tag, MPI_COMM_WORLD);
-//                MPI_Send(&x[i * n_wier], n_wier, MPI_DOUBLE, i, tag, MPI_COMM_WORLD);
+//                MPI_Send(&a[i * DIMENSION * row_num], row_num * DIMENSION, MPI_DOUBLE, i, tag, MPI_COMM_WORLD);
+//                MPI_Send(&x[i * row_num], row_num, MPI_DOUBLE, i, tag, MPI_COMM_WORLD);
 //            }
 //
 //
-//            MPI_Send(&a[(size - 1) * WYMIAR * n_wier], n_wier_last * WYMIAR, MPI_DOUBLE, size - 1, tag, MPI_COMM_WORLD);
-//            MPI_Send(&x[(size - 1) * n_wier], n_wier_last, MPI_DOUBLE, size - 1, tag, MPI_COMM_WORLD);
+//            MPI_Send(&a[(size - 1) * DIMENSION * row_num], row_num_last * DIMENSION, MPI_DOUBLE, size - 1, tag, MPI_COMM_WORLD);
+//            MPI_Send(&x[(size - 1) * row_num], row_num_last, MPI_DOUBLE, size - 1, tag, MPI_COMM_WORLD);
 //
 ////            if (rank == 0) printf("rank %d, a[0] %lf\n", rank, a[0]);
 ////            if (rank == 0)
 ////                printf("rank %d, last %d, a[last] %lf\n", rank,
-////                       (size - 1) * WYMIAR * n_wier + n_wier_last * WYMIAR - 1,
-////                       a[(size - 1) * WYMIAR * n_wier + n_wier_last * WYMIAR - 1]);
+////                       (size - 1) * DIMENSION * row_num + row_num_last * DIMENSION - 1,
+////                       a[(size - 1) * DIMENSION * row_num + row_num_last * DIMENSION - 1]);
 //
 //        } else {
 //
 //
-//            for (i = 0; i < WYMIAR; i++) x[i] = 0.0;
+//            for (i = 0; i < DIMENSION; i++) x[i] = 0.0;
 //
 //            source = 0;
 //            if (rank < size - 1) {
 //
-//                MPI_Recv(a_local, n_wier * WYMIAR, MPI_DOUBLE, source,
+//                MPI_Recv(a_local, row_num * DIMENSION, MPI_DOUBLE, source,
 //                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-//                MPI_Recv(&x[rank * n_wier], n_wier, MPI_DOUBLE, source,
+//                MPI_Recv(&x[rank * row_num], row_num, MPI_DOUBLE, source,
 //                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 //
 //            } else {
 //
-//                MPI_Recv(a_local, n_wier_last * WYMIAR, MPI_DOUBLE, source,
+//                MPI_Recv(a_local, row_num_last * DIMENSION, MPI_DOUBLE, source,
 //                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-//                MPI_Recv(&x[(size - 1) * n_wier], n_wier_last, MPI_DOUBLE, source,
+//                MPI_Recv(&x[(size - 1) * row_num], row_num_last, MPI_DOUBLE, source,
 //                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 //
 //            }
 //        }
-
 
         if (rank == 0) {
             printf("Starting MPI matrix-vector product with block row decomposition!\n");
             t1 = MPI_Wtime();
         }
 
-        // local parts of x start at rank*n_wier
-        //MPI_Allgather(&x[rank*n_wier], n_wier, MPI_DOUBLE, x, n_wier, MPI_DOUBLE, MPI_COMM_WORLD );
-        MPI_Allgather(x_local, n_wier, MPI_DOUBLE, x, n_wier, MPI_DOUBLE, MPI_COMM_WORLD);
+        // local parts of x start at rank*row_num
+        //MPI_Allgather(&x[rank*row_num], row_num, MPI_DOUBLE, x, row_num, MPI_DOUBLE, MPI_COMM_WORLD );
+        MPI_Allgather(x_local, row_num, MPI_DOUBLE, x, row_num, MPI_DOUBLE, MPI_COMM_WORLD);
 
 
-        for (i = 0; i < n_wier; i++) {
+        for (i = 0; i < row_num; i++) {
 
             double t = 0.0;
             int ni = n * i;
@@ -180,7 +177,7 @@ int main(int argc, char **argv) {
             t1 = MPI_Wtime() - t1;
             printf("Wersja rownolegla MPI z dekompozycja wierszowa blokowa\n");
             printf("\tczas wykonania: %lf, Gflop/s: %lf, GB/s> %lf\n",
-                   t1, 2.0e-9 * ROZMIAR / t1, (1.0 + 1.0 / n) * 8.0e-9 * ROZMIAR / t1);
+                   t1, 2.0e-9 * SIZE / t1, (1.0 + 1.0 / n) * 8.0e-9 * SIZE / t1);
 
         }
 
@@ -192,23 +189,23 @@ int main(int argc, char **argv) {
 
 //        if (rank > 0) {
 //
-//            MPI_Send(z, n_wier, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
+//            MPI_Send(z, row_num, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
 //
 //        } else {
 //
 //            for (i = 1; i < size; i++) {
-//                MPI_Recv(&z[i * n_wier], n_wier, MPI_DOUBLE, i, tag, MPI_COMM_WORLD, &status);
+//                MPI_Recv(&z[i * row_num], row_num, MPI_DOUBLE, i, tag, MPI_COMM_WORLD, &status);
 //
 //            }
 //        }
 
 
-        MPI_Allgather(z, n_wier, MPI_DOUBLE, z,
-                      n_wier, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Allgather(z, row_num, MPI_DOUBLE, z,
+                      row_num, MPI_DOUBLE, MPI_COMM_WORLD);
 
         if (rank == 0) {
 
-            for (i = 0; i < WYMIAR; i++) {
+            for (i = 0; i < DIMENSION; i++) {
                 if (fabs(y[i] - z[i]) > 1.e-9 * z[i]) {
                     printf("Blad! i=%d, y[i]=%lf, z[i]=%lf\n", i, y[i], z[i]);
                 }
@@ -217,16 +214,16 @@ int main(int argc, char **argv) {
 
 
         /************** || block column decomposition (collective only) || *******************/
-        int n_col = n_wier; // each process processes ncol columns
+        int n_col = row_num; // each process processes ncol columns
 
         // z is initialized for all ranks
-        for (i = 0; i < WYMIAR; i++) z[i] = 0.0;
+        for (i = 0; i < DIMENSION; i++) z[i] = 0.0;
 
         // local a is initialized to zero - now local a stores several columns (not rows as before)
-        for (i = 0; i < WYMIAR * n_col; i++) a_local[i] = 0.0;
+        for (i = 0; i < DIMENSION * n_col; i++) a_local[i] = 0.0;
 
-        // for each row (starting at i*WYMIAR - due to row storage)
-        for (i = 0; i < WYMIAR; i++) {
+        // for each row (starting at i*DIMENSION - due to row storage)
+        for (i = 0; i < DIMENSION; i++) {
 
             // ... collective communication necessary to distribute data
             // several elements (corresponding to ncol columns) are send to each process
@@ -272,7 +269,7 @@ int main(int argc, char **argv) {
         // end I. Reduce
 
         // II. All-to-all
-        // WARNING: All-to-all requires large MPI buffers (check matrix size WYMIAR in case of errors)
+        // WARNING: All-to-all requires large MPI buffers (check matrix size DIMENSION in case of errors)
 
         // All-to-all requires also synchronisation
         // MPI_Barrier(MPI_COMM_WORLD);
@@ -305,9 +302,9 @@ int main(int argc, char **argv) {
         MPI_Barrier(MPI_COMM_WORLD);
         if (rank == 0) {
             t1 = MPI_Wtime() - t1;
-            printf("Werja rownolegla MPI z dekompozycją kolumnową blokową\n");
-            printf("\tczas wykonania: %lf, Gflop/s: %lf, GB/s> %lf\n",
-                   t1, 2.0e-9 * ROZMIAR / t1, (1.0 + 1.0 / n) * 8.0e-9 * ROZMIAR / t1);
+            printf("Parallel version of MPI with block column decomposition\n");
+            printf("\tExecution time: %lf, Gflop/s: %lf, GB/s> %lf\n",
+                   t1, 2.0e-9 * SIZE / t1, (1.0 + 1.0 / n) * 8.0e-9 * SIZE / t1);
 
         }
 
@@ -318,12 +315,12 @@ int main(int argc, char **argv) {
         // testing - switch on after completing calculations and communcation
         if (rank == 0) {
 
-            for (i = 0; i < WYMIAR; i++) {
+            for (i = 0; i < DIMENSION; i++) {
                 if (fabs(y[i] - z[i]) > 1.e-9 * z[i]) {
-                    printf("Blad! i=%d, y[i]=%lf, z[i]=%lf - complete the code for column decomposition\n",
+                    printf("Error! i=%d, y[i]=%lf, z[i]=%lf - complete the code for column decomposition\n",
                            i, y[i], z[i]);
                     break;
-                    //printf("Blad! i=%d, y[i]=%lf, z[i]=%lf\n",i, y[i], z[i]);
+                    //printf("Error! i=%d, y[i]=%lf, z[i]=%lf\n",i, y[i], z[i]);
                 }
             }
         }
