@@ -19,12 +19,13 @@ int main()
     double dx_adjust = (b - a) / N;
 
     printf("\nBeginning of OpenMP calculations\n");
-    double t1 = omp_get_wtime();
+    double starting_time = omp_get_wtime();
     int i;
     double integral = 0.0;
-#pragma omp parallel for default(none) firstprivate(N, a, dx_adjust) reduction(+:integral)
-    for (i = 0; i < N; i++) {
 
+#pragma omp parallel for default(none) firstprivate(N, a, dx_adjust) reduction(+:integral)
+    for (i = 0; i < N; i++)
+    {
         double x1 = a + i * dx_adjust;
         integral += 0.5 * dx_adjust * (cube(x1) + cube(x1 + dx_adjust));
 
@@ -32,8 +33,8 @@ int main()
         //     i, x1, cube(x1), integral);
     }
 
-    t1 = omp_get_wtime() - t1;
-    printf("\tExecution time %lf. \tCalculated integral = %.15lf\n\n\n", t1, integral);
+    starting_time = omp_get_wtime() - starting_time;
+    printf("\tExecution time %lf. \tCalculated integral = %.15lf\n\n\n", starting_time, integral);
 
     for (int j = 0; j < 5; ++j) {
         Results();
@@ -52,15 +53,15 @@ void Results()
     double integral = 0.0;
 
 #pragma omp parallel for default(none) firstprivate(N, a, dx_adjust) reduction(+:integral)
-    for (i = 0; i < N; i++) {
-
+    for (i = 0; i < N; i++)
+    {
         double x1 = a + i * dx_adjust;
         integral += 0.5 * dx_adjust * (cube(x1) + cube(x1 + dx_adjust));
 
         //printf("i %d, x1 %lf, cube(x1) %lf, integral = %.15lf\n",
         //     i, x1, cube(x1), integral);
-
     }
+
     starting_time = omp_get_wtime() - starting_time;
     printf("%lf\n", starting_time);
 }
