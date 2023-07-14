@@ -20,10 +20,10 @@ class histogramTest
         //Variant1
         System.out.println("Variant 1");
         int threadAmountV1 = 94;
-        Wariant1[] threadsVersion1 = new Wariant1[threadAmountV1];
+        Variant1[] threadsVersion1 = new Variant1[threadAmountV1];
 
         for (int i = 0; i < threadAmountV1; i++) {
-            (threadsVersion1[i] = new Wariant1(image1, i)).start();
+            (threadsVersion1[i] = new Variant1(image1, i)).start();
         }
 
         for (int i = 0; i < threadAmountV1; i++) {
@@ -43,7 +43,7 @@ class histogramTest
             int to = (int) scalar * (i + 1);
             if (to > 94) to = 94;
             System.out.println(from + " " + to);
-            (threadsVersion2[i] = new Thread(new Wariant2(image1, from, to, i))).start();
+            (threadsVersion2[i] = new Thread(new Variant2(image1, from, to, i))).start();
         }
 
         for (int i = 0; i < threads; i++) {
