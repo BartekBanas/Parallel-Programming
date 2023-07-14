@@ -7,9 +7,9 @@ class histogramTest
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Set image size: n (#rows), m(#columns)");
-        int n = scanner.nextInt();
-        int m = scanner.nextInt();
-        Obraz image1 = new Obraz(n, m);
+        int rows = scanner.nextInt();
+        int columns = scanner.nextInt();
+        Image image1 = new Image(rows, columns);
 
         image1.calculate_histogram();
         image1.print_histogram();
@@ -54,6 +54,6 @@ class histogramTest
             }
         }
 
-        image1.compare_histograms();
+        image1.compareHistograms();
     }
 }
