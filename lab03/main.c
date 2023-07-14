@@ -20,36 +20,34 @@ int main(void)
 
     pthread_mutex_init(&mutex, NULL);
 
-    int i;
-
     printf("\nNumber of Clients: ");
     scanf("%d", &amount_of_customers);
 
     printf("\nNumber of pints: ");
     scanf("%d", &number_of_pints);
-    int kufelki = number_of_pints;
+    int pints = number_of_pints;
 
     //printf("\nNumber of taps: "); scanf("%d", &number_of_pints);
     number_of_pints = 1000000000; // enough that there is no competition
 
     clients = (pthread_t *) malloc(amount_of_customers * sizeof(pthread_t));
     client_ids = (int *) malloc(amount_of_customers * sizeof(int));
-    for (i = 0; i < amount_of_customers; i++) client_ids[i] = i;
+    for (int i = 0; i < amount_of_customers; i++) client_ids[i] = i;
 
 
     printf("\nPub opening(simple)!\n");
     printf("\nNumber of free pints %d\n", number_of_pints);
 
-    for (i = 0; i < amount_of_customers; i++) {
+    for (int i = 0; i < amount_of_customers; i++) {
         pthread_create(&clients[i], NULL, customer_threads, &client_ids[i]);
     }
-    for (i = 0; i < amount_of_customers; i++) {
+    for (int i = 0; i < amount_of_customers; i++) {
         pthread_join(clients[i], NULL);
     }
     printf("\nPub closing!\n");
 
     printf("\nNumber of clients: %d", amount_of_customers);
-    printf("\nInitial number of pints: %d", kufelki);
+    printf("\nInitial number of pints: %d", pints);
     printf("\nNumber of pints: %d\n", number_of_pints);
     printf("\nThe number of errors when the number of pints reached a negative value: %d\n\n", bug);
 
