@@ -1,29 +1,11 @@
-//
-// Created by tomas on 08/01/2023.
-//
-
-#include "mat_vec.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-
 void mat_vec(double* a, double* x, double* y, int nn, int nt)
 {
-
-
-//   printf("nr threads = %d\n", omp_get_num_threads());
-
-//#pragma omp parallel default(none) firstprivate(nn, x, a, y) // num_threads(nt)
     {
         register int k=0;
         register int n=nn;
         register int i;
         register int j;
 
-//   printf("nr threads = %d\n", omp_get_num_threads());
-
-//#pragma omp for
         for(i=0;i<n;i+=2){
             register double ty1 = 0;
             register double ty2 = 0;
