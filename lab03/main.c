@@ -6,110 +6,107 @@
 
 #define LEFT_TO_DRINK 3
 
-void *watek_klient(void *arg);
+void *customer_threads(void *pointer);
 
 pthread_mutex_t mutex;
 
-int l_kl, l_kf, l_kr;
+int amount_of_customers, number_of_pints, number_of_pints;
 int bug = 0;
 
-int main(void) {
-
-    pthread_t *tab_klient;
-    int *tab_klient_id;
+int main(void)
+{
+    pthread_t *clients;
+    int *client_ids;
 
     pthread_mutex_init(&mutex, NULL);
 
     int i;
 
-    printf("\nLiczba klientow: ");
-    scanf("%d", &l_kl);
+    printf("\nNumber of Clients: ");
+    scanf("%d", &amount_of_customers);
 
-    printf("\nLiczba kufli: ");
-    scanf("%d", &l_kf);
-    int kufelki = l_kf;
+    printf("\nNumber of pints: ");
+    scanf("%d", &number_of_pints);
+    int kufelki = number_of_pints;
 
-    //printf("\nLiczba kranow: "); scanf("%d", &l_kr);
-    l_kr = 1000000000; // wystarczająco dużo, żeby nie było rywalizacji
+    //printf("\nNumber of taps: "); scanf("%d", &number_of_pints);
+    number_of_pints = 1000000000; // enough that there is no competition
 
-    tab_klient = (pthread_t *) malloc(l_kl * sizeof(pthread_t));
-    tab_klient_id = (int *) malloc(l_kl * sizeof(int));
-    for (i = 0; i < l_kl; i++) tab_klient_id[i] = i;
+    clients = (pthread_t *) malloc(amount_of_customers * sizeof(pthread_t));
+    client_ids = (int *) malloc(amount_of_customers * sizeof(int));
+    for (i = 0; i < amount_of_customers; i++) client_ids[i] = i;
 
 
-    printf("\nOtwieramy pub (simple)!\n");
-    printf("\nLiczba wolnych kufli %d\n", l_kf);
+    printf("\nPub opening(simple)!\n");
+    printf("\nNumber of free pints %d\n", number_of_pints);
 
-    for (i = 0; i < l_kl; i++) {
-        pthread_create(&tab_klient[i], NULL, watek_klient, &tab_klient_id[i]);
+    for (i = 0; i < amount_of_customers; i++) {
+        pthread_create(&clients[i], NULL, customer_threads, &client_ids[i]);
     }
-    for (i = 0; i < l_kl; i++) {
-        pthread_join(tab_klient[i], NULL);
+    for (i = 0; i < amount_of_customers; i++) {
+        pthread_join(clients[i], NULL);
     }
-    printf("\nZamykamy pub!\n");
+    printf("\nPub closing!\n");
 
-    printf("\nLiczba klientow: %d", l_kl);
-    printf("\nLiczba poczatkowa kufli: %d", kufelki);
-    printf("\nLiczba kufli: %d\n", l_kf);
-    printf("\nIlosc bledow, gdy ilosc kufli osiagnela wartosc ujemna: %d\n\n", bug);
+    printf("\nNumber of clients: %d", amount_of_customers);
+    printf("\nInitial number of pints: %d", kufelki);
+    printf("\nNumber of pints: %d\n", number_of_pints);
+    printf("\nThe number of errors when the number of pints reached a negative value: %d\n\n", bug);
 
-    //pthread_mutex_destroy(&mutex, NULL);
+    //pthread_mutex_destroy(&mutex);
 }
 
 
-void *watek_klient(void *arg_wsk) {
-    int moj_id = *((int *) arg_wsk);
+void *customer_threads(void *pointer) {
+    int id = *((int *) pointer);
 
-    int i, j, result, success = 0;
-    int ile_musze_wypic = LEFT_TO_DRINK;
+    int i, j, success;
+    int left_to_drink = LEFT_TO_DRINK;
 
-    long int wykonana_praca = 0;
+    long int work_done = 0;
 
-    printf("\nKlient %d, wchodze do pubu\n", moj_id);
+    printf("\nCustomer %d, I'm entering a pub\n", id);
 
-    for (i = 0; i < ile_musze_wypic; i++)
+    for (i = 0; i < left_to_drink; i++)
     {
         j = 0;
 
         do { success = 0;
             pthread_mutex_lock(&mutex);
 
-            if (l_kf >= 1) {
-                printf("\nKlient %d, wybieram kufel\n", moj_id);
-                l_kf--;
+            if (number_of_pints >= 1) {
+                printf("\nCustomer %d, I choose a pint\n", id);
+                number_of_pints--;
 
-                if (l_kf < 0) { bug++; }
+                if (number_of_pints < 0) { bug++; }
 
                 success = 1;
                 pthread_mutex_unlock(&mutex);
             }
 
             if (success == 0) {
-                printf("\nKlient %d, just waitin'\n", moj_id);
+                printf("\nCustomer %d, just waitin'\n", id);
                 pthread_mutex_unlock(&mutex);
             }
 
         } while (success == 0);
 
-        printf("\nKlient %d, nalewam z kranu %d\n", moj_id, j);
+        printf("\nCustomer %d, I'm pouring from the tap %d\n", id, j);
 
-        l_kr--;
+        number_of_pints--;
         usleep(30);
-        l_kr++;
+        number_of_pints++;
 
-        printf("\nKlient %d, pije\n", moj_id);
+        printf("\nCustomer %d, I'm drinking\n", id);
         nanosleep((struct timespec[]) {{0, 50000000L}}, NULL);
 
-        printf("\nKlient %d, odkladam kufel\n", moj_id);
+        printf("\nCustomer %d, I'm putting down my pint\n", id);
         pthread_mutex_lock(&mutex);
-        l_kf++;
+        number_of_pints++;
         pthread_mutex_unlock(&mutex);
     }
 
-    printf("\nKlient %d, wychodze z pubu; wykonana praca %ld\n",
-           moj_id, wykonana_praca);
-
-    //printf("\nLiczba kufli: %d", l_kf);
+    printf("\nCustomer %d, leaving the pub; the work done %ld\n", id, work_done);
 
     return (NULL);
 }
